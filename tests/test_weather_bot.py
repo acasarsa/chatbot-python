@@ -81,17 +81,57 @@ class TestGetWeather(TestCase):
         # Mock the similarity computation
         mock_weather = mock.Mock()
         mock_statement = mock.Mock()
-        mock_weather.similarity.return_value = 0.4  # Setting a low similarity score
+        mock_weather.similarity.return_value = 0.3  # Setting a low similarity score
         mock_nlp.side_effect = [mock_weather, mock_statement]
 
         # Provide a statement to the bot
-        statement = "Tell me a random fact about apples"
+        statement = "what is your name?"
         result = weather_bot.chatbot(statement)
 
         # Expected response when a statement has low similarity to typical weather questions
         expected_result = "I'm sorry, I can only provide information about the weather."
 
         self.assertEqual(result, expected_result)
+
+    @mock.patch('src.weather_bot.nlp')
+    def test_high_similarity_statement(self, mock_nlp):
+        # Mock the NLP processing
+        mock_weather = mock.Mock()
+        mock_statement = mock.Mock()
+        mock_ent = mock.Mock(label_="GPE", text="Brooklyn")
+        mock_weather.similarity.return_value = 0.8
+        mock_statement.ents = [mock_ent]  # Making the mock object iterable
+        mock_nlp.side_effect = [mock_weather, mock_statement, mock_ent]
+
+        # Provide a statement to the bot
+        statement = "Is it hot in Brooklyn?"
+        result = weather_bot.chatbot(statement)
+
+        expected_result = "In Brooklyn, the current weather is: 70F with clear sky"
+        self.assertEqual(result, expected_result)
+
+    @mock.patch('src.weather_bot.nlp')
+    def test_query_with_no_city_name(self, mock_nlp):
+        mock_weather = mock.Mock()
+        mock_statement = mock.Mock()
+        mock_ent = mock.Mock(label_="GPE", text="")
+        mock_weather.similarity.return_value = 0.8
+        mock_statement.ents = []  # Making the mock object iterable
+        mock_nlp.side_effect = [mock_weather, mock_statement]
+
+        statement = "Tell me the weather?"
+        result = weather_bot.chatbot(statement)
+
+        expected_result = "You need to tell me a city to check."
+
+
+    @mock.patch('src.weather_bot.get_weather')
+    def test_valid_query(self, mock_get_weather):
+        # Mocking the get_weather function to always return the same string
+        mock_get_weather.return_value = "Mocked weather response"
+
+        response = weather_bot.chatbot("Tell me the weather in Paris.")
+        self.assertEqual(response, "Mocked weather response")
 
 
 if __name__ == '__main__':

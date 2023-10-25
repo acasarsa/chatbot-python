@@ -24,27 +24,24 @@ def get_weather(city_name):
         full_temp = response_dict["main"]["temp"]
         temp = round(full_temp)
         description = response_dict["weather"][0]["description"]
-        return f"In {city_name.capitalize()}, the current weather is: {temp}F with {description}"
+        return f"In {city_name}, the current weather is: {temp}F with {description}"
     else:
         print('Unexpected response format.')
         return None
 
 
-def chatbot(statement):
+def chatbot(statement, min_similarity=0.5):
     weather = nlp("Current temperature and weather description in a city")
-    statement = nlp(statement)
-    min_similarity = 0.5
+    statement = nlp(statement.lower())
 
-    if weather.similarity(statement) >= min_similarity:
-        for ent in statement.ents:
-            if ent.label_ == "GPE":  # GeoPolitical Entity
-                city = ent.text
-                return get_weather(city) or "Something went wrong."
-        return "You need to tell me a city to check."
-    else:
+    if weather.similarity(statement) <= min_similarity:
         # if weather.similarity(statement) >= min_similarity is not sufficient ask for rephrase
         return "I'm sorry, I can only provide information about the weather."
+    else:
+        for ent in statement.ents:
+            if ent.label_ == "GPE":  # GeoPolitical Entity
+                city = ent.text.capitalize()
+                return get_weather(city) or "Something went wrong."
+        return "You need to tell me a city to check."
 
-# Using the app as it currently exists
-# response = chatbot("How hot is it in Brooklyn today?")
-# print(response)
+

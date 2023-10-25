@@ -1,4 +1,4 @@
 .env
 requirements_backup.txt
 __pycache__/
-
+.DS_Store
